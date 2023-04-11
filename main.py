@@ -27,7 +27,7 @@ def train(model, optimizer, epoch, dataloader, beta):
         optimizer.zero_grad()
         # After permutation, shape of data (n_examples, n_channels, height, width)
         # x_ = x.permute(0, 3, 1, 2)
-        x_ = x.reshape(-1, 64 * 64)
+        x_ = x.reshape(x.shape[0], -1)
         recon_batch, mean, variance = model.forward(x_)
         loss = loss_function(x_, recon_batch, mean, variance, beta)
         train_loss.append(loss.item())
@@ -51,9 +51,18 @@ def save_imgs(imgs, base_path):
         plt.savefig(f"{base_path}/{idx}.jpg")
     
 if __name__ == "__main__":    
+    """
+    n: number of examples to generate
+    latent_dim: dimensions of the bottleneck layer
+    n_epochs: number of epochs to train the model
+    frames: numpy array of frames. shape: (n_examples, height, width) for LinearVAE, (n_examples, height, width, channel) for ConvVAE
+    img_dim: (64, 64)
+    """
     n = 10
     latent_dim = 32
     n_epochs = 30
+    frames = loadmat("dataset/cartpole.mat")["frames"][:, :, :, 0]
+
     device = T.device("cuda" if T.cuda.is_available() else "cpu")
     img_dim = (64, 64)
     # model = ConvVAE(img_dim, latent_dim, device)
@@ -61,7 +70,6 @@ if __name__ == "__main__":
 
     optimizer = T.optim.Adam(model.parameters())
     
-    frames = loadmat("dataset/cartpole.mat")["frames"][:, :, :, 0]
     dataset = CustomDataset(frames, device)
     dataloader = T.utils.data.DataLoader(dataset, batch_size = 10)
     

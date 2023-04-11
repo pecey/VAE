@@ -4,7 +4,9 @@ import numpy as np
 from PIL import Image
 
 if __name__ == "__main__":
-    
+    """
+    Loop to generate sample data.
+    """    
     env = gym.make("CartPole-v1", render_mode="rgb_array")
     observation, info = env.reset(seed=42)
     frames = []
