@@ -1,7 +1,8 @@
 import torch as T
 import torch.nn.functional as F
 import numpy as np
-from vae import VAE
+from conv_vae import ConvVAE
+from linear_vae import LinearVAE
 from dataset import CustomDataset
 from matplotlib import pyplot as plt
 from scipy.io import loadmat
@@ -25,7 +26,8 @@ def train(model, optimizer, epoch, dataloader, beta):
     for _, x in enumerate(dataloader):
         optimizer.zero_grad()
         # After permutation, shape of data (n_examples, n_channels, height, width)
-        x_ = x.permute(0, 3, 1, 2)
+        # x_ = x.permute(0, 3, 1, 2)
+        x_ = x.reshape(-1, 64 * 64)
         recon_batch, mean, variance = model.forward(x_)
         loss = loss_function(x_, recon_batch, mean, variance, beta)
         train_loss.append(loss.item())
@@ -37,7 +39,9 @@ def train(model, optimizer, epoch, dataloader, beta):
     
 def generate_images(model, z_random):
     model.eval()
-    return model.decode(z_random.squeeze()).permute(0,2,3,1).detach().cpu().numpy()
+    res = model.decode(z_random.squeeze())
+    # return res.permute(0,2,3,1).detach().cpu().numpy()
+    return res.reshape(10, 64, 64).detach().cpu().numpy()
 
 def save_imgs(imgs, base_path):
     for idx, img in enumerate(imgs):
@@ -52,10 +56,12 @@ if __name__ == "__main__":
     n_epochs = 30
     device = T.device("cuda" if T.cuda.is_available() else "cpu")
     img_dim = (64, 64)
-    model = VAE(img_dim, latent_dim, device)
+    # model = ConvVAE(img_dim, latent_dim, device)
+    model = LinearVAE(img_dim, latent_dim, device)
+
     optimizer = T.optim.Adam(model.parameters())
     
-    frames = loadmat("dataset/cartpole.mat")["frames"]
+    frames = loadmat("dataset/cartpole.mat")["frames"][:, :, :, 0]
     dataset = CustomDataset(frames, device)
     dataloader = T.utils.data.DataLoader(dataset, batch_size = 10)
     
