@@ -67,6 +67,7 @@ if __name__ == "__main__":
     img_dim = (64, 64)
     # model = ConvVAE(img_dim, latent_dim, device)
     model = LinearVAE(img_dim, latent_dim, device)
+    # model.load_state_dict(T.load("saved_model.pt"))
 
     optimizer = T.optim.Adam(model.parameters())
     
@@ -75,7 +76,9 @@ if __name__ == "__main__":
     
     for i in range(1, n_epochs+1):
         model = train(model, optimizer, i, dataloader, beta=1)
-    
+        
+    T.save(model.state_dict(), "saved_model.pt")
+        
     normal_distribution = T.distributions.normal.Normal(T.Tensor([0.0]), T.Tensor([1.0]))
     z_random = normal_distribution.sample((n, latent_dim)).to(device)
     recon_images = generate_images(model, z_random)
